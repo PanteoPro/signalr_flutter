@@ -82,6 +82,15 @@ class HubConnection {
   Completer? _handshakeCompleter;
   Exception? _stopDuringStartError;
 
+  final List<void Function(List<HubMessageBase>)> _onReceiveListeners = [];
+  void addOnReceiveListener(void Function(List<HubMessageBase>) listener) {
+    _onReceiveListeners.add(listener);
+  }
+
+  void removeOnReceiveListener(void Function(List<HubMessageBase>) listener) {
+    _onReceiveListeners.remove(listener);
+  }
+
   late final _HubConnectionStateMaintainer _hubConnectionStateMaintainer;
   HubConnectionState get _connectionState =>
       _hubConnectionStateMaintainer.hubConnectionState;
@@ -563,6 +572,7 @@ class HubConnection {
     if (data != null) {
       // Parse the messages
       final messages = _protocol.parseMessages(data, _logger);
+      _onReceiveListeners.forEach((listener) => listener(messages));
 
       for (final message in messages) {
         _logger?.finest("Handle message of type '${message.type}'.");
